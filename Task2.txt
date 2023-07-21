@@ -1,0 +1,85 @@
+1,Find all the topics and tasks which are thought in the month of October
+Ans:db.topics.aggregate([
+  {
+    $lookup: {
+      from: "tasks",
+      localField: "_id",
+      foreignField: "topic_id",
+      as: "tasks"
+    }
+  },
+  {
+    $match: {
+      "tasks.submission_date": {
+        $gte: ISODate("2023-10-01"),
+        $lt: ISODate("2023-11-01")
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      name: 1,
+      tasks: 1
+    }
+  }
+])
+
+2,Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+Ans:db.company_drives.find({
+  drive_date: {
+    $gte: ISODate("2020-10-15"),
+    $lte: ISODate("2020-10-31")
+  }
+});
+
+3,Find all the company drives and students who are appeared for the placement.
+Ans:db.company_drives.aggregate([
+  {
+    $lookup: {
+      from: "users",
+      localField: "drive_id",
+      foreignField: "user_id",
+      as: "participants"
+    }
+  }
+])
+
+4,Find the number of problems solved by the user in codekata
+Ans:db.tasks.countDocuments({ user_id: userId, status: "submitted" })
+
+5,Find all the mentors with who has the mentee's count more than 15
+Ans:db.mentors.find({ students_count: { $gt: 15 } })
+
+6,Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+Ans:db.users.aggregate([
+  {
+    $lookup: {
+      from: "tasks",
+      localField: "user_id",
+      foreignField: "user_id",
+      as: "related_tasks"
+    }
+  },
+  {
+    $lookup: {
+      from: "attendance",
+      localField: "user_id",
+      foreignField: "user_id",
+      as: "attendance_info"
+    }
+  },
+  {
+    $match: {
+      "attendance_info.date": {
+        $gte: ISODate("2020-10-15"),
+        $lte: ISODate("2020-10-31")
+      },
+      $or: [
+        { "attendance_info.status": "absent" },
+        { "related_tasks.status": "pending" }
+      ]
+    }
+  }
+])
+
